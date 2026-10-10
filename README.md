@@ -6,14 +6,15 @@ celý příběh země: změny států, dvě světové války, poválečný propa
 
 [![Náhled videa](assets/video/obalka_cs.png)](assets/video/cesko_v_cislech_cs.mp4)
 
-**▶ Video:** [assets/video/cesko_v_cislech_cs.mp4](assets/video/cesko_v_cislech_cs.mp4)
+**▶ Video:** [česky](assets/video/cesko_v_cislech_cs.mp4) · [English](assets/video/cesko_v_cislech_en.mp4)
 
 ![Ukázka snímků: 1754, 1918, 1939, 2021](assets/video/ukazka_snimku.png)
 
 *English summary:* a vertical data animation of the population of today's Czechia from 1754 to 2021,
 built from open data of the Czech Statistical Office (ČSÚ) and dated historical borders from
-OpenHistoricalMap. Everything is rendered in Python; texts live in a separate file, so English and
-German versions can be rendered from the same code.
+OpenHistoricalMap. Everything is rendered in Python; texts live in a separate file, so each language
+version is rendered from the same code. **English video:** [cesko_v_cislech_en.mp4](assets/video/cesko_v_cislech_en.mp4)
+(cover image: [obalka_en.png](assets/video/obalka_en.png)).
 
 ## Co video ukazuje
 
@@ -85,7 +86,7 @@ data/raw/            původní tabulky ČSÚ (xlsx)
 data/timeline.csv    osa videa: rok, typ údaje, počty, útvar, vlajka, mapa, událost, ikona
 data/rocni_odhady.csv  roční počty pro válečná období
 data/mapy/           hranice pro jednotlivá období (GeoJSON)
-texty/cs.json        všechny texty videa (jazykové verze = další soubory se stejnými klíči)
+texty/cs.json        všechny texty videa; texty/en.json anglická verze se stejnými klíči
 texty/prispevky_cs.md  texty příspěvků pro Facebook a LinkedIn
 src/                 skripty (mapy, roční odhady, render videa, náhledy)
 assets/              vlajky, ikony, náhledy map, hotové video a obrázek náhledu

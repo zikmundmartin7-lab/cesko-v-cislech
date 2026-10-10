@@ -467,6 +467,12 @@ def main():
 
     # šipka trendu hned za počtem obyvatel: pozice podle nejširšího čísla ve videu, aby neposkakovala
     renderer = fig.canvas.get_renderer()
+    # dlouhé názvy útvarů (např. v angličtině) se zmenší, aby se vešly na šířku obrazovky
+    velikost_utvaru = {}
+    for kl, nazev in tx["utvary"].items():
+        utvar_t.set_text(nazev); utvar_t.set_fontsize(54 * pt)
+        sirka_nazvu = utvar_t.get_window_extent(renderer).width / skala
+        velikost_utvaru[kl] = 54 * pt * min(1.0, (W - 178 - 40) / sirka_nazvu)
     sirka = 0
     for rok, v in zip(osa.p_rok, osa.p_cel):
         cislo_t.set_text(("≈ " + fmt(v, 1)) if rok < 1857 else fmt(v, 2))
@@ -503,7 +509,8 @@ def main():
         # útvar s vlajkou, letopočet
         pred, akt, t0 = aktualni(utvar_ud, cas)
         f = ease((cas - t0) / 0.5)
-        utvar_t.set_text(tx["utvary"][akt if f > 0.5 else pred])
+        kl = akt if f > 0.5 else pred
+        utvar_t.set_text(tx["utvary"][kl]); utvar_t.set_fontsize(velikost_utvaru[kl])
         utvar_t.set_alpha(abs(2 * f - 1) if f < 1 else 1)
         pred, akt, t0 = aktualni(vlajka_ud, cas)
         f = ease((cas - t0) / 0.6)

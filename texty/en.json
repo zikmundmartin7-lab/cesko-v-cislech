@@ -1,0 +1,59 @@
+{
+ "_poznamka": "English texts for the video. Same keys as texty/cs.json.",
+ "titulek": "CZECHIA IN NUMBERS",
+ "hook": "What happened in 267 years?",
+ "utvary": {
+  "hm": "Habsburg Monarchy",
+  "rc": "Austrian Empire",
+  "ru": "Austria-Hungary",
+  "csr": "Czechoslovakia",
+  "prot": "Protectorate of Bohemia and Moravia",
+  "cssr": "Czechoslovak Socialist Republic",
+  "csfr": "Czech and Slovak Federative Republic",
+  "cr": "Czech Republic"
+ },
+ "udalosti": {
+  "1754": "1754: Maria Theresa orders a census of the whole monarchy",
+  "1774": "1774: Compulsory schooling is introduced",
+  "1787": "1781: Joseph II abolishes serfdom",
+  "1800": "1805: Battle of Austerlitz",
+  "1850": "1848: Revolution, end of forced peasant labour",
+  "1857": "1845: Railway links Prague with Vienna",
+  "1869": "1868: Foundation stone of the National Theatre",
+  "1880": "1881: National Theatre burns down, rebuilt by 1883",
+  "1890": "1891: Jubilee Exhibition, Petřín Lookout Tower",
+  "1900": "Industrial boom: Škoda Works, Laurin & Klement",
+  "1910": "Population passes 10 million for the first time",
+  "1914": "World War I",
+  "1918": "28 Oct 1918: Czechoslovakia is founded",
+  "1921": "T. G. Masaryk, the first president",
+  "1930": "The golden years of the First Republic",
+  "1938": "Munich Agreement: the border regions are lost",
+  "1939": "World War II",
+  "1945": "End of World War II",
+  "1948": "February 1948: Communist coup",
+  "1950": "−1.78 million people compared to 1930",
+  "1961": "Expo 58 in Brussels; 1960: the country becomes the ČSSR",
+  "1970": "1968: Prague Spring",
+  "1980": "1970s baby boom: “Husák’s children”",
+  "1991": "1989: Velvet Revolution",
+  "1993": "1 Jan 1993: Czechoslovakia splits, the Czech Republic is born",
+  "2001": "1999: Joins NATO",
+  "2011": "2004: Joins the EU; 2007: Joins the Schengen Area",
+  "2021": "2021: Census in the middle of the pandemic"
+ },
+ "popisky": {
+  "mil": "million",
+  "desetinna_carka": ".",
+  "oddelovac_tisicu": ",",
+  "pointa_cisla": "1930: {a} · 2021: {b}",
+  "nadpis_mapy": "Population of present-day Czechia"
+ },
+ "zdroje": "Data: Czech Statistical Office (ČSÚ) · Maps: OpenHistoricalMap, Historical Basemaps (GPL-3.0) · Flags: Wikimedia Commons · Icons: Font Awesome (CC BY 4.0)",
+ "autor": "Martin Zikmund",
+ "pointa": [
+  "In 2021, Czechia had",
+  "fewer people than in 1930.",
+  ""
+ ]
+}
