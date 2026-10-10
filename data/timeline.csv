@@ -1,0 +1,29 @@
+rok,typ,celkem,muzi,zeny,utvar,vlajka,vlajka_soubor,mapa,udalost,obraz_namet,poznamka,ikona
+1754,odhad,3800000,,,Habsburská monarchie,habsburska,Flag_of_the_Habsburg_Monarchy.svg,world_1783,1754: Marie Terezie nechává sečíst obyvatele celé monarchie,portrét Marie Terezie,,clipboard-list
+1774,udalost,,,,Habsburská monarchie,habsburska,Flag_of_the_Habsburg_Monarchy.svg,world_1783,1774: Zavedena povinná školní docházka,venkovská škola / portrét Marie Terezie,,school
+1787,odhad,4578000,,,Habsburská monarchie,habsburska,Flag_of_the_Habsburg_Monarchy.svg,world_1783,1781: Josef II. ruší nevolnictví,portrét Josefa II.,,link-slash
+1800,odhad,4812000,,,Habsburská monarchie,habsburska,Flag_of_the_Habsburg_Monarchy.svg,world_1800,1805: bitva u Slavkova,obraz bitvy (Gérard) — případně jen krajina Santonu,od 1804 Rakouské císařství,crown
+1850,odhad,6838000,,,Rakouské císařství,rak_cis,Flag_of_the_Austrian_Empire.svg,world_1815,"1848: revoluce, zrušení roboty",barikády v Praze 1848,,wheat-awn
+1857,scitani_celkem,7016531,,,Rakouské císařství,rak_cis,Flag_of_the_Austrian_Empire.svg,world_1815,1845: železnice spojila Prahu s Vídní,parní lokomotiva,sčítání bez rozdělení na pohlaví,train
+1869,scitani,7617230,3654138,3963092,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1880,1868: Položen základní kámen Národního divadla,stavba Národního divadla,,trowel-bricks
+1880,scitani,8222013,3946813,4275200,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1880,"1881: Národní divadlo vyhořelo, do roku 1883 bylo obnoveno",Národní divadlo (požár 1881),,masks-theater
+1890,scitani,8665421,4168371,4497050,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1900,"1891: Jubilejní výstava, Petřínská rozhledna",Petřínská rozhledna,,tower-observation
+1900,scitani,9372214,4546513,4825701,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1900,"Průmyslový rozmach: Škodovka, Laurin & Klement",tovární haly / první automobily,,industry
+1910,scitani,10078637,4913142,5165495,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1914,Poprvé přes 10 milionů obyvatel,Obecní dům (1912),vrchol před válkou,people-group
+1914,udalost,,,,Rakousko-Uhersko,ru,Flag_of_Austria-Hungary_(1869-1918).svg,world_1914,První světová válka,"prázdné židle, svíčky — univerzální",ZLOM 1: šipka se začne otáčet,heart-crack
+1918,udalost,,,,Československo,bila_cervena,Flag_of_Bohemia.svg,world_1920,28. 10. 1918: vznik Československa,Václavské náměstí 28. 10.,"mění se útvar, vlajka i mapa",flag
+1921,scitani,10009587,4803464,5206123,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1920,"T. G. Masaryk, první prezident",portrét TGM,"dopad: −110 tis. mužů, ženy rostou",user-tie
+1930,scitani,10674386,5174074,5500312,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1930,Zlatá léta první republiky,meziválečná Praha,"maximum, které padne až v 21. století",city
+1938,udalost,,,,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1938,Mnichovská dohoda: ztráta pohraničí,mapa se zmenšuje — bez symbolů,"citlivé: popsat věcně, bez obviňování",file-signature
+1939,udalost,,,,Protektorát Čechy a Morava,zadna,(šedé pole — bez vlajky),world_1938,Druhá světová válka,"svíčky, prázdná místa, tiše klesající čísla",ZLOM 2: žádná vlajka ani symboly,monument
+1945,udalost,,,,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1945,Konec druhé světové války,"svíčky, prázdná místa — univerzální",bez dalších formulací (rozhodnutí 10. 10. 2026),dove
+1948,udalost,,,,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1945,Únor 1948: Komunistický převrat,"Staroměstské náměstí, únor 1948",,landmark-flag
+1950,scitani,8896133,4325641,4570492,Československo,cs,Flag_of_the_Czech_Republic.svg,world_1945,"−1,78 mil. obyvatel oproti roku 1930",prázdná místa,"ve videu bez uvedení příčin; souvislosti (válečné ztráty, holocaust, vysídlení) až v popisku příspěvku / poznámce ke zdrojům",users-slash
+1961,scitani,9571531,4640631,4930900,Československá socialistická republika,cs,Flag_of_the_Czech_Republic.svg,world_1960,Expo 58 v Bruselu; 1960: vznik ČSSR,československý pavilon Expo 58,,trophy
+1970,scitani,9807697,4749511,5058186,Československá socialistická republika,cs,Flag_of_the_Czech_Republic.svg,world_1960,1968: Pražské jaro,Václavské náměstí 1968,,seedling
+1980,scitani,10291927,4988095,5303832,Československá socialistická republika,cs,Flag_of_the_Czech_Republic.svg,world_1960,Silné ročníky 70. let — „Husákovy děti“,"kočárky, sídliště",+484 tis. za dekádu,baby-carriage
+1991,scitani,10302215,4999935,5302280,Česká a Slovenská Federativní Republika,cs,Flag_of_the_Czech_Republic.svg,world_1960,1989: sametová revoluce,klíče nad hlavou na Letné,,key
+1993,udalost,,,,Česká republika,cs,Flag_of_the_Czech_Republic.svg,world_1994,1. 1. 1993: Rozdělení Československa a vznik České republiky,nová mapa ČR,mění se útvar i mapa,handshake
+2001,scitani,10230060,4982071,5247989,Česká republika,cs,Flag_of_the_Czech_Republic.svg,world_2000,1999: Vstup do NATO,vlajka NATO / summit,první mírový pokles (nízká porodnost 90. let),shield-halved
+2011,scitani,10436560,5109766,5326794,Česká republika,cs,Flag_of_the_Czech_Republic.svg,world_2010,2004: Vstup do Evropské unie; 2007: Vstup do schengenského prostoru,vlajky EU / zrušené hraniční závory,růst díky imigraci,star
+2021,scitani,10524167,5186548,5337619,Česká republika,cs,Flag_of_the_Czech_Republic.svg,world_2010,Sčítání uprostřed pandemie,—,"10,52 mil. — skoro jako 1930; pointa odolnosti",head-side-mask

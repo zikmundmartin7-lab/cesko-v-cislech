@@ -1,0 +1,7 @@
+numpy
+pandas
+openpyxl
+matplotlib
+shapely
+imageio-ffmpeg
+pillow

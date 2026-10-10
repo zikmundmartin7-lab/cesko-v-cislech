@@ -1,0 +1,7 @@
+.DS_Store
+__pycache__/
+*.pyc
+assets/video/snimek_*.png
+assets/video/*_nahled.mp4
+assets/mapy/mapa_animace.gif
+assets/mapy/mapa_styl_1938.png

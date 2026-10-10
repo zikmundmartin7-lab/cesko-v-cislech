@@ -1,0 +1,59 @@
+{
+ "_poznamka": "Texty videa v češtině. Překlady: texty/en.json, texty/de.json se stejnými klíči.",
+ "titulek": "ČESKO V ČÍSLECH",
+ "hook": "Co se stalo za 267 let?",
+ "utvary": {
+  "hm": "Habsburská monarchie",
+  "rc": "Rakouské císařství",
+  "ru": "Rakousko-Uhersko",
+  "csr": "Československo",
+  "prot": "Protektorát Čechy a Morava",
+  "cssr": "ČSSR",
+  "csfr": "ČSFR",
+  "cr": "Česká republika"
+ },
+ "udalosti": {
+  "1754": "1754: Marie Terezie nechává sečíst obyvatele celé monarchie",
+  "1774": "1774: Zavedena povinná školní docházka",
+  "1787": "1781: Josef II. ruší nevolnictví",
+  "1800": "1805: bitva u Slavkova",
+  "1850": "1848: revoluce, zrušení roboty",
+  "1857": "1845: železnice spojila Prahu s Vídní",
+  "1869": "1868: Položen základní kámen Národního divadla",
+  "1880": "1881: Národní divadlo vyhořelo, do roku 1883 bylo obnoveno",
+  "1890": "1891: Jubilejní výstava, Petřínská rozhledna",
+  "1900": "Průmyslový rozmach: Škodovka, Laurin & Klement",
+  "1910": "Poprvé přes 10 milionů obyvatel",
+  "1914": "První světová válka",
+  "1918": "28. 10. 1918: vznik Československa",
+  "1921": "T. G. Masaryk, první prezident",
+  "1930": "Zlatá léta první republiky",
+  "1938": "Mnichovská dohoda: ztráta pohraničí",
+  "1939": "Druhá světová válka",
+  "1945": "Konec druhé světové války",
+  "1948": "Únor 1948: Komunistický převrat",
+  "1950": "−1,78 milionu obyvatel oproti roku 1930",
+  "1961": "Expo 58 v Bruselu; 1960: vznik ČSSR",
+  "1970": "1968: Pražské jaro",
+  "1980": "Silné ročníky 70. let — „Husákovy děti“",
+  "1991": "1989: sametová revoluce",
+  "1993": "1. 1. 1993: Rozdělení Československa a vznik České republiky",
+  "2001": "1999: Vstup do NATO",
+  "2011": "2004: Vstup do Evropské unie; 2007: Vstup do schengenského prostoru",
+  "2021": "2021: Sčítání uprostřed pandemie"
+ },
+ "popisky": {
+  "mil": "mil.",
+  "desetinna_carka": ",",
+  "oddelovac_tisicu": " ",
+  "pointa_cisla": "1930: {a} · 2021: {b}",
+  "nadpis_mapy": "Počet obyvatel na území dnešního Česka"
+ },
+ "zdroje": "Data: ČSÚ · Mapy: OpenHistoricalMap, Historical Basemaps (GPL-3.0) · Vlajky: Wikimedia Commons · Ikony: Font Awesome (CC BY 4.0)",
+ "autor": "Martin Zikmund",
+ "pointa": [
+  "V roce 2021 žilo v Česku",
+  "méně lidí než v roce 1930.",
+  ""
+ ]
+}
