@@ -8,6 +8,8 @@ celý příběh země: změny států, dvě světové války, poválečný propa
 
 **▶ Video:** [česky](assets/video/cesko_v_cislech_cs.mp4) · [English](assets/video/cesko_v_cislech_en.mp4)
 
+**▶ Varianta „Muži a ženy“:** [česky](assets/video/cesko_v_cislech_cs_pohlavi.mp4) · [English](assets/video/cesko_v_cislech_en_pohlavi.mp4)
+
 ![Ukázka snímků: 1754, 1918, 1939, 2021](assets/video/ukazka_snimku.png)
 
 *English summary:* a vertical data animation of the population of today's Czechia from 1754 to 2021,
@@ -26,6 +28,28 @@ version is rendered from the same code. **English video:** [cesko_v_cislech_en.m
   a otáčí se se setrvačností, takže na události reaguje se zpožděním, stejně jako data.
 - **Události** s ikonou: od soupisu Marie Terezie (1754) po sčítání uprostřed pandemie (2021).
 - **Pointa:** sčítání 2021 napočítalo méně obyvatel (10,52 mil.) než sčítání 1930 (10,67 mil.).
+
+## Varianta „Muži a ženy“ (1869–2021)
+
+[![Náhled varianty](assets/video/obalka_cs_pohlavi.png)](assets/video/cesko_v_cislech_cs_pohlavi.mp4)
+
+Stejná osa a mapy, ale místo celkového počtu obyvatel ukazuje, koho tu žilo víc: mužů, nebo žen.
+
+- **Vodorovný sloupec „přetlačování“:** muži modře zleva, ženy červeně zprava, v barvách skutečné počty.
+  Hranice mezi barvami odpovídá podílu mužů. Podíl žen se v datech pohybuje jen mezi 50,7 a 52,0 %,
+  proto má sloupec **zvětšené měřítko 45–55 %** (ve videu je to vyznačeno) a svislou čáru 50 : 50.
+- **Šipky trendu** pro počet mužů a počet žen těsně vedle sebe (zelená = roste, červená = klesá).
+- Začíná rokem 1869 (první sčítání s počty mužů a žen), letopočet běží plynule, podíl mezi sčítáními
+  je dopočtený monotónní křivkou (PCHIP) a počty = celkový počet obyvatel × podíl.
+- Popisky událostí jsou bez letopočtu; události, které nastaly o víc let dřív než sčítání, k němuž
+  byly přiřazeny (Expo 58, Pražské jaro, sametová revoluce), se zobrazí ve svém skutečném roce.
+- Události navíc vysvětlující poměr pohlaví: stagnace délky života mužů 1960–1990 a dohánění po roce 1989
+  (ČSÚ, tab. 8.6), pracovní migrace (podle SLDB 2021 je 55 % cizinců mužů).
+- Závěr: „Při každém sčítání žilo v Česku víc žen než mužů. 1921: o 403 tis. víc žen · 2021: už jen
+  o 151 tis.“ a poznámka o „efektu vracejících se vojáků“ (MacMahon & Pugh 1954, Graffelman & Hoekstra 2000).
+
+Naděje dožití mužů a žen 1920–2024 je připravená v `data/nadeje_doziti.csv` pro další video.
+Verze s hudbou (Uppbeat) se v repozitáři nešíří; hudba se licencuje zvlášť.
 
 ## Data a metodika
 
@@ -72,7 +96,9 @@ Písmo je Avenir Next (systémové písmo macOS); na jiném systému změňte ko
 pip install -r requirements.txt
 python3 src/mapy.py          # stáhne hranice (OpenHistoricalMap, Historical Basemaps) a připraví data/mapy/
 python3 src/rocni_odhady.py  # roční počty obyvatel pro válečná období -> data/rocni_odhady.csv
+python3 src/nadeje_doziti.py # naděje dožití podle pohlaví -> data/nadeje_doziti.csv (pro další video)
 python3 src/video.py         # video -> assets/video/cesko_v_cislech_cs.mp4
+python3 src/video.py --varianta pohlavi   # varianta „Muži a ženy“ -> cesko_v_cislech_cs_pohlavi.mp4
 ```
 
 Užitečné přepínače `src/video.py`: `--nahled` (poloviční rozlišení), `--snimek 49` (jeden snímek
@@ -87,7 +113,8 @@ data/timeline.csv    osa videa: rok, typ údaje, počty, útvar, vlajka, mapa, u
 data/rocni_odhady.csv  roční počty pro válečná období
 data/mapy/           hranice pro jednotlivá období (GeoJSON)
 texty/cs.json        všechny texty videa; texty/en.json anglická verze se stejnými klíči
-texty/prispevky_cs.md  texty příspěvků pro Facebook a LinkedIn
+texty/prispevky_cs.md  texty příspěvků pro Facebook a LinkedIn (+ prispevky_en.md, youtube_pohlavi.md)
+data/nadeje_doziti.csv naděje dožití mužů a žen 1920–2024 (ČSÚ tab. 8.6)
 src/                 skripty (mapy, roční odhady, render videa, náhledy)
 assets/              vlajky, ikony, náhledy map, hotové video a obrázek náhledu
 ```

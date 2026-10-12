@@ -47,7 +47,19 @@
   "desetinna_carka": ",",
   "oddelovac_tisicu": " ",
   "pointa_cisla": "1930: {a} · 2021: {b}",
-  "nadpis_mapy": "Počet obyvatel na území dnešního Česka"
+  "nadpis_mapy": "Počet obyvatel na území dnešního Česka",
+  "muzi": "muži",
+  "zeny": "ženy",
+  "procenta": "{v} %",
+  "pohlavi_nezname": "počty mužů a žen nejsou známé",
+  "pohlavi_meritko": "měřítko zvětšeno (45–55 %)",
+  "pointa_pohlavi_cisla": "{r1}: o {a} tis. víc žen · {r2}: už jen o {b} tis.",
+  "nadpis_mapy_pohlavi": "Muži a ženy na území dnešního Česka",
+  "roku": "{v} roku",
+  "nadpis_pomer": "Počet mužů a žen",
+  "nadpis_nadeje": "Naděje dožití při narození",
+  "nadeje_nezname": "údaje až od roku 1920",
+  "mil_kratce": "mil."
  },
  "zdroje": "Data: ČSÚ · Mapy: OpenHistoricalMap, Historical Basemaps (GPL-3.0) · Vlajky: Wikimedia Commons · Ikony: Font Awesome (CC BY 4.0)",
  "autor": "Martin Zikmund",
@@ -55,5 +67,39 @@
   "V roce 2021 žilo v Česku",
   "méně lidí než v roce 1930.",
   ""
+ ],
+ "hook_pohlavi": "Koho tu bylo víc:\nmužů, nebo žen?",
+ "pointa_pohlavi": [
+  "Při každém sčítání žilo",
+  "v Česku víc žen než mužů.",
+  ""
+ ],
+ "udalosti_pohlavi": {
+  "1869": "Položen základní kámen Národního divadla",
+  "1880": "Národní divadlo vyhořelo, za dva roky bylo obnoveno",
+  "1890": "Jubilejní výstava, Petřínská rozhledna",
+  "1900": "Průmyslový rozmach: Škodovka, Laurin & Klement",
+  "1910": "Poprvé přes 10 milionů obyvatel",
+  "1914": "První světová válka",
+  "1918": "28. října: vznik Československa",
+  "1921": "T. G. Masaryk, první prezident",
+  "1930": "Zlatá léta první republiky",
+  "1938": "Mnichovská dohoda: ztráta pohraničí",
+  "1939": "Druhá světová válka",
+  "1945": "Konec druhé světové války",
+  "1948": "Únorový komunistický převrat",
+  "1950": "Žen je o 245 tisíc víc než mužů, méně než před válkou",
+  "1961": "Expo 58 v Bruselu",
+  "1970": "Pražské jaro",
+  "1980": "Délka života mužů 30 let stagnuje, žen roste",
+  "1991": "Sametová revoluce",
+  "1993": "Rozdělení Československa a vznik České republiky",
+  "2001": "Po revoluci se muži dožívají déle a dohánějí ženy",
+  "2011": "Přicházejí pracovníci ze zahraničí, většinou muži",
+  "2021": "Sčítání uprostřed pandemie"
+ },
+ "poznamka_vojaci": [
+  "Podle řady studií se po válkách rodí víc chlapců.",
+  "Vědci se ale dodnes neshodnou proč, a válečné ztráty mužů to zdaleka nevyrovná."
  ]
 }

@@ -41,3 +41,21 @@ Jak to vzniklo: sčítání lidu 1869–2021 a historické odhady ČSÚ, histori
 Pokud máte data, ve kterých tušíte příběh, ale zatím z nich máte jen tabulky, rád se na ně podívám.
 
 #datovaanalyza #vizualizacedat #python #dataviz #historie
+
+---
+
+## Varianta „muži a ženy“ – podklady k textu příspěvku
+
+Schválená věta (do popisku, ne do videa):
+
+> Podle řady studií se po válkách rodí víc chlapců. Vědci se ale dodnes neshodnou proč, a válečné ztráty mužů to zdaleka nevyrovná.
+
+Zdroje: MacMahon & Pugh 1954 (Am J Hum Genet), Graffelman & Hoekstra 2000 (Human Biology), Kanazawa 2007 (Human Reproduction), James 2009 (J Theor Biol).
+
+Hudba (video `cesko_v_cislech_cs_pohlavi_hudba.mp4`) – text pro uvedení autora z Uppbeatu, vložit do popisu přesně takto
+(platí pro jedno video; pro další síť / další nahrání vygenerovat nový v Download History):
+
+```
+Music: 'Piano Fields' by Bernie Rosa on #Uppbeat https://uppbeat.io/c/bernie-rosa
+License code: RNRKJDPA4HVXWBK8
+```

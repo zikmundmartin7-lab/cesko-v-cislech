@@ -47,7 +47,19 @@
   "desetinna_carka": ".",
   "oddelovac_tisicu": ",",
   "pointa_cisla": "1930: {a} · 2021: {b}",
-  "nadpis_mapy": "Population of present-day Czechia"
+  "nadpis_mapy": "Population of present-day Czechia",
+  "muzi": "men",
+  "zeny": "women",
+  "procenta": "{v}%",
+  "pohlavi_nezname": "no data on men and women",
+  "pohlavi_meritko": "zoomed scale (45–55%)",
+  "pointa_pohlavi_cisla": "{r1}: {a}k more women · {r2}: only {b}k",
+  "nadpis_mapy_pohlavi": "Men and women in present-day Czechia",
+  "roku": "{v} yrs",
+  "nadpis_pomer": "Number of men and women",
+  "nadpis_nadeje": "Life expectancy at birth",
+  "nadeje_nezname": "data only from 1920",
+  "mil_kratce": "M"
  },
  "zdroje": "Data: Czech Statistical Office (ČSÚ) · Maps: OpenHistoricalMap, Historical Basemaps (GPL-3.0) · Flags: Wikimedia Commons · Icons: Font Awesome (CC BY 4.0)",
  "autor": "Martin Zikmund",
@@ -55,5 +67,39 @@
   "In 2021, Czechia had",
   "fewer people than in 1930.",
   ""
+ ],
+ "hook_pohlavi": "Men or women:\nwho outnumbered whom?",
+ "pointa_pohlavi": [
+  "Every census found",
+  "more women than men in Czechia.",
+  ""
+ ],
+ "udalosti_pohlavi": {
+  "1869": "Foundation stone of the National Theatre",
+  "1880": "National Theatre burns down, rebuilt two years later",
+  "1890": "Jubilee Exhibition, Petřín Lookout Tower",
+  "1900": "Industrial boom: Škoda Works, Laurin & Klement",
+  "1910": "Population passes 10 million for the first time",
+  "1914": "World War I",
+  "1918": "28 October: Czechoslovakia is founded",
+  "1921": "T. G. Masaryk, the first president",
+  "1930": "The golden years of the First Republic",
+  "1938": "Munich Agreement: the border regions are lost",
+  "1939": "World War II",
+  "1945": "End of World War II",
+  "1948": "February: Communist coup",
+  "1950": "245,000 more women than men, fewer than before the war",
+  "1961": "Expo 58 in Brussels",
+  "1970": "Prague Spring",
+  "1980": "Men’s life expectancy stalls for 30 years, women’s keeps rising",
+  "1991": "Velvet Revolution",
+  "1993": "Czechoslovakia splits, the Czech Republic is born",
+  "2001": "After the revolution men live longer and catch up with women",
+  "2011": "Workers arrive from abroad, mostly men",
+  "2021": "Census in the middle of the pandemic"
+ },
+ "poznamka_vojaci": [
+  "Many studies find that more boys are born after wars.",
+  "Scientists still disagree why, and it comes nowhere near making up for the men lost in war."
  ]
 }

@@ -10,6 +10,7 @@ Použití:
 """
 import argparse
 import json
+from types import SimpleNamespace
 import math
 import textwrap
 from pathlib import Path
@@ -26,6 +27,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.patches import Circle, PathPatch, Polygon, Rectangle
 from matplotlib.path import Path as MPath
 from PIL import Image
+from scipy.interpolate import PchipInterpolator
 from shapely.geometry import shape
 from shapely.ops import unary_union
 
@@ -36,7 +38,7 @@ FONT = "Avenir Next"
 BARVY = dict(
     pozadi="#0d1b2a", pevnina="#1f2a36", hranice="#3b4a5a", utvar="#f2b33d", ztrata="#7a8796",
     cr="#ffffff", text="#e8edf2", text2="#8fa3b8", mrizka="#22303f",
-    muzi="#3987e5", zeny="#d95926", odhad="#8fa3b8",  # muži/ženy: sloty 1 a 2 validované palety (tmavý režim)
+    muzi="#3987e5", zeny="#e66767", odhad="#8fa3b8",  # muži/ženy: sloty 1 a 2 validované palety (tmavý režim)
     okupace="#8c8273",  # protektorát: území ukázané, ale tlumeně (nešlo o samostatný stát)
     nahoru="#0ca30c", dolu="#d03b3b",  # stavové barvy: vždy spolu s tvarem šipky
 )
@@ -71,6 +73,12 @@ def trvani(rok, typ):
     return zaklad * TEMPO
 
 
+def trvani_radku(r):
+    if getattr(r, "bez_popisu", False):
+        return 2.1 * TEMPO  # sčítání, jehož událost se přesunula na skutečný rok (popisek předchozí události drží)
+    return trvani(r.rok, r.typ)
+
+
 def ease(t):
     t = min(max(t, 0.0), 1.0)
     return t * t * (3 - 2 * t)
@@ -89,17 +97,32 @@ def obdelnik(x, y, sirka, vyska):
 
 # ---------------------------------------------------------------- data a časová osa
 class Osa:
-    def __init__(self, fps):
+    def __init__(self, fps, od_roku=None, plynule=False, presunout=None):
+        """od_roku: vynechá řádky před tímto rokem; plynule: letopočet se posouvá bez zastavení u událostí;
+        presunout: {rok řádku: rok události} – událost se oddělí od sčítání a zobrazí se ve svém skutečném roce."""
         t = pd.read_csv(ROOT / "data" / "timeline.csv", keep_default_na=False)
-        self.radky = list(t.itertuples(index=False))
+        self.radky = []
+        for r in t.itertuples(index=False):
+            if od_roku is not None and r.rok < od_roku:
+                continue
+            r = SimpleNamespace(**r._asdict(), klic=str(r.rok), bez_popisu=False)  # klic = klíč textu události
+            if presunout and r.rok in presunout:
+                self.radky.append(SimpleNamespace(**{**vars(r), "rok": presunout[r.rok], "typ": "udalost",
+                                                     "celkem": "", "muzi": "", "zeny": ""}))
+                r.bez_popisu = True
+            self.radky.append(r)
+        self.radky.sort(key=lambda r: r.rok)
+        self.plynule = plynule
         self.fps = fps
         self.start = []  # čas začátku každého řádku
         cas = HOOK + PULLBACK
         for r in self.radky:
             self.start.append(cas)
-            cas += trvani(r.rok, r.typ)
+            cas += trvani_radku(r)
         self.konec_dat = cas
         self.delka = cas + ZAVER
+        # plynule: letopočet jde přes začátky všech řádků hladkou monotónní křivkou (bez skoků v rychlosti)
+        self._cas_rok = PchipInterpolator(self.start, [r.rok for r in self.radky]) if plynule else None
         self.n = int(self.delka * fps)
         self.roky = np.array([r.rok for r in self.radky], float)
         # datové body
@@ -113,6 +136,23 @@ class Osa:
         v = np.concatenate([self.d_cel, ro.stredni_stav.to_numpy(float)])
         o = np.argsort(x)
         self.p_rok, self.p_cel = x[o], v[o]
+        # podíl mužů ze sčítání (od 1869); mezi sčítáními lineárně
+        s = [r for r in d if r.typ == "scitani"]
+        self.s_rok = np.array([r.rok for r in s], float)
+        self.s_muzi = np.array([float(r.muzi) / float(r.celkem) * 100 for r in s])
+        self._muzi_krivka = PchipInterpolator(self.s_rok, self.s_muzi) if len(s) > 1 else None
+        nd = pd.read_csv(ROOT / "data" / "nadeje_doziti.csv")
+        self.n_rok = nd.rok.to_numpy(float)  # hodnota za rok přesně u letopočtu, aby sedělo „2021 = 74,1“
+        self.n_m, self.n_z = nd.nadeje_doziti_muzi.to_numpy(float), nd.nadeje_doziti_zeny.to_numpy(float)
+
+    def nadeje(self, rok):
+        """Naděje dožití mužů a žen (roky); hodnota za rok leží na daném letopočtu, mezi roky lineárně."""
+        return float(np.interp(rok, self.n_rok, self.n_m)), float(np.interp(rok, self.n_rok, self.n_z))
+
+    def podil_muzu(self, rok):
+        """Podíl mužů (%) – plynulá monotónní křivka mezi sčítáními (bez zlomů v letech sčítání)."""
+        rok = min(max(rok, self.s_rok[0]), self.s_rok[-1])
+        return float(self._muzi_krivka(rok))
 
     def pocet(self, rok):
         return float(np.interp(rok, self.p_rok, self.p_cel))
@@ -121,10 +161,12 @@ class Osa:
         """Plynulý letopočet: v rámci řádku se posouvá k dalšímu řádku, u každého bodu zpomalí."""
         if cas < HOOK + PULLBACK:
             return self.roky[0]
+        if self._cas_rok is not None:
+            return float(self._cas_rok(min(max(cas, self.start[0]), self.start[-1])))
         i = max(k for k, s in enumerate(self.start) if s <= cas) if cas >= self.start[0] else 0
         if i == len(self.radky) - 1:
             return self.roky[-1]
-        p = (cas - self.start[i]) / trvani(self.radky[i].rok, self.radky[i].typ)
+        p = (cas - self.start[i]) / trvani_radku(self.radky[i])
         f = ease((p - 0.45) / 0.55)  # první polovinu řádku letopočet drží rok události, pak se rozběhne
         return self.roky[i] + (self.roky[i + 1] - self.roky[i]) * f
 
@@ -145,6 +187,8 @@ class Osa:
 def stav_v_case(hranice, osa, cas, pocatek=None):
     """Vrátí (předchozí klíč, aktuální klíč, čas přechodu) pro období řízená letopočtem."""
     udalosti = [] if pocatek is None else [pocatek]
+    rok0 = osa.roky[0]
+    hranice = [(-1e9, [k for r, k in hranice if r <= rok0][-1])] + [(r, k) for r, k in hranice if r > rok0]
     for i, (rok, klic) in enumerate(hranice):
         udalosti.append((HOOK if i == 0 else osa.cas_roku(rok), klic))
     return udalosti
@@ -287,7 +331,7 @@ def uhel_z_tempa(r):
 
 
 class Sipka:
-    """Šipka trendu podle aktuálního ročního tempa změny počtu obyvatel.
+    """Šipka trendu podle aktuálního ročního tempa změny veličiny (výchozí: počet obyvatel).
 
     Otáčí se plynule se setrvačností (TAU), takže na změnu v datech reaguje se zpožděním;
     při změně směru (nahoru <-> dolů) krátce zapulzuje.
@@ -295,14 +339,15 @@ class Sipka:
     TAU = 0.5  # s
     PRAH_PULZU = 25  # úhel cíle (°), od kterého se změna směru bere jako zlom
 
-    def __init__(self, osa):
+    def __init__(self, osa, funkce=None):
+        f = funkce or osa.pocet
         self.fps, dt = osa.fps, 1 / osa.fps
         self.uhly, self.meritka = [], []
         uhel, pulz_od = None, -1e9
         for k in range(osa.n):
             cas = k * dt
             rok = osa.rok(cas)
-            r = (osa.pocet(rok + 0.5) - osa.pocet(rok - 0.5)) / osa.pocet(rok)
+            r = (f(rok + 0.5) - f(rok - 0.5)) / f(rok)
             cil = uhel_z_tempa(r)
             novy = cil if uhel is None else uhel + (cil - uhel) * (1 - math.exp(-dt / self.TAU))
             if uhel is not None and (novy > 0) != (uhel > 0) and abs(cil) > self.PRAH_PULZU:
@@ -342,6 +387,12 @@ CISLO_Y = 1225                     # horní okraj počtu obyvatel
 UDALOST_Y = 1482                   # střed řádku s ikonou a popiskem
 ODZNAK_R = 98                      # poloměr odznaku s ikonou
 ZDROJE_Y = 1665
+UDALOST_VEDLE_ROKU = False         # varianta: událost na řádku letopočtu
+POPIS_PX, POPIS_ZALOM = 50, 25     # velikost písma popisku události (px) a zalomení (znaků)
+POINTA_Y = None                    # horní okraj závěrečné pointy (None = podle řádku události)
+POPIS_TRVALY = False               # varianta: popisek zůstává, dokud nepřijde další událost
+ZDROJE_ZPOZDENI = 2.0              # kdy se v závěru objeví zdroje (s od konce dat)
+POZNAMKA_OD = 2.6                  # varianta: kdy v závěru místo mapy naskočí poznámka (s od konce dat)
 
 # Hook a náhled: první snímek je zároveň obrázek náhledu (Facebook ořezává svislé video ve feedu
 # zhruba na 4:5, v mřížce až na 1:1), proto je vše podstatné ve středovém čtverci y 420–1500.
@@ -351,6 +402,98 @@ H_ODCHOD = (2.7, 3.2)               # úvodní obrazovka drží do 2,7 s, pak se
 CERNA, ZLUTA = "#000000", "#ffcc00"
 BILA, CERVENA, MODRA = "#ffffff", "#d7141a", "#11457e"
 SIPKA_S = 300                       # velikost osy se šipkou trendu (px)
+
+# Varianta „pohlavi“: pod počtem obyvatel vodorovný sloupec mužů (vlevo) a žen (vpravo).
+# Podíl žen se v datech mění jen mezi 50,7 a 52,0 %, proto má sloupec zvětšené měřítko kolem 50 : 50.
+POHLAVI_ROZSAH = (45.0, 55.0)       # podíl mužů (%) na levém a pravém okraji sloupce
+POHLAVI_V = 150                     # výška sloupce (px)
+# bez počtu obyvatel a šipky: mapa -> útvar -> letopočet -> podíl mužů a žen -> naděje dožití -> událost
+ROZVRZENI_POHLAVI = dict(MAPA_V=760, UTVAR_Y=1020, ROK_Y=1062, POHLAVI_Y=1262, ODZNAK_R=92, ZDROJE_Y=1700,
+                         UDALOST_VEDLE_ROKU=True, POPIS_PX=44, POINTA_Y=1480, POPIS_TRVALY=True,
+                         ZAVER=12.0, ZDROJE_ZPOZDENI=6.0)
+# události, které se staly o víc než rok dřív než sčítání, k němuž byly přiřazeny: ve variantě (bez letopočtu
+# v popisku) se zobrazí ve svém skutečném roce
+PRESUNOUT_POHLAVI = {1961: 1958, 1970: 1968, 1991: 1989}
+
+
+class Pretahovani:
+    """Vodorovný sloupec „přetlačování“: muži modře zleva, ženy červeně zprava.
+
+    Hranice mezi barvami odpovídá podílu mužů na zvětšeném měřítku POHLAVI_ROZSAH; svislá čára je 50 : 50.
+    Do příchodu prvních údajů je sloupec šedý s vysvětlujícím textem.
+    """
+
+    def __init__(self, T, tax, y, vyska, nadpis, p, prazdne, pt, fig=None, skala=1.0):
+        self.x0, self.x1, self.lo, self.hi = 60, W - 60, *POHLAVI_ROZSAH
+        x0, x1 = self.x0, self.x1
+        self.nadpis = T(x0, y - 12, nadpis, va="bottom", fontsize=28 * pt, color=BARVY["text2"], weight="demibold")
+        self.m = tax.add_patch(Rectangle((x0, y), 0, vyska, fc=BARVY["muzi"], ec="none", zorder=3))
+        self.z = tax.add_patch(Rectangle((x0, y), 0, vyska, fc=BARVY["zeny"], ec="none", zorder=3))
+        self.nic = tax.add_patch(Rectangle((x0, y), x1 - x0, vyska, fc=BARVY["hranice"], ec="none", zorder=3))
+        sx = x0 + (50 - self.lo) / (self.hi - self.lo) * (x1 - x0)
+        self.stred = tax.plot([sx, sx], [y - 10, y + vyska + 10], color=BARVY["text"], lw=2.5,
+                              solid_capstyle="round", zorder=4)[0]
+        self.stred_t = T(sx, y + vyska + 14, "50 : 50", ha="center", va="top", fontsize=22 * pt,
+                         color=BARVY["text2"], weight="demibold")
+        self.meritko_t = T(x1, y + vyska + 14, p["pohlavi_meritko"], ha="right", va="top", fontsize=20 * pt,
+                           color=BARVY["text2"])
+        velke, male = 0.32 * vyska, 0.2 * vyska  # v barvách velká hodnota a pod ní menší popisek
+        # (velikost čísla zvolena tak, aby se „4,92 mil.“ vešlo i do nejužší modré části, 48 % mužů)
+        self.m_t = T(x0 + 24, y + 0.42 * vyska, "", va="center", fontsize=velke * pt, color="white",
+                     weight="bold", zorder=5)
+        self.z_t = T(x1 - 24, y + 0.42 * vyska, "", ha="right", va="center", fontsize=velke * pt, color="white",
+                     weight="bold", zorder=5)
+        self.m_l = T(x0 + 26, y + 0.8 * vyska, p["muzi"], va="center", fontsize=male * pt, color="white",
+                     weight="demibold", zorder=5)
+        self.z_l = T(x1 - 26, y + 0.8 * vyska, p["zeny"], ha="right", va="center", fontsize=male * pt,
+                     color="white", weight="demibold", zorder=5)
+        self.nic_t = T((x0 + x1) / 2, y + vyska / 2, prazdne, ha="center", va="center", fontsize=28 * pt,
+                       color=BARVY["text2"], weight="demibold", zorder=5)
+        # šipky trendu těsně vedle sebe u hranice mezi muži a ženami (posouvají se s ní), ať jde trend porovnat
+        self.sipky = None
+        if fig is not None:
+            self.s_vel, self.s_y = 0.36 * vyska, y + 0.8 * vyska
+            # zelená = roste, červená = klesá; bílý obrys, aby byla vidět i na červené části sloupce
+            self.sipky = [tax.add_patch(Polygon(tvar_sipky(0, 1), closed=True, fc="white", ec="white",
+                                                lw=3 * pt, joinstyle="round", zorder=5))
+                          for _ in range(2)]
+
+    def nastav(self, podil_m, text_m, text_z, viditelnost, sipky=None):
+        bx = self.x0 + min(max((podil_m - self.lo) / (self.hi - self.lo), 0), 1) * (self.x1 - self.x0)
+        self.m.set_width(bx - self.x0 - 2)
+        self.z.set_x(bx + 2); self.z.set_width(self.x1 - bx - 2)
+        self.m_t.set_text(text_m); self.z_t.set_text(text_z)
+        for o in (self.m, self.z, self.m_t, self.z_t, self.m_l, self.z_l, self.stred, self.stred_t, self.meritko_t):
+            o.set_alpha(viditelnost)
+        self.nic.set_alpha(1 - viditelnost); self.nic_t.set_alpha(1 - viditelnost)
+        if self.sipky and sipky:
+            mezera = 16
+            stredy = [(bx - mezera - 0.8 * self.s_vel, self.s_y), (bx + mezera + 0.75 * self.s_vel, self.s_y)]
+            for sipka, (cx, cy), (uhel, mer) in zip(self.sipky, stredy, sipky):
+                body = tvar_sipky(uhel, mer) * self.s_vel
+                body[:, 1] *= -1  # osa textů má y obrácené (shora dolů)
+                sipka.set_xy(body + (cx, cy)); sipka.set_alpha(viditelnost)
+                sipka.set_facecolor(barva_sipky(uhel))
+
+
+def symboly_pohlavi(ax, pt):
+    """Tradiční symboly: ♂ (kruh se šipkou) modře a ♀ (kruh s křížkem) červeně, v px souřadnicích osy."""
+    tah = dict(lw=24 * pt, solid_capstyle="round", solid_joinstyle="round", zorder=12)
+    out = []
+    # ♂ muži
+    cx, cy, R, L, H = 355, 950, 118, 125, 70
+    d = math.sqrt(0.5)
+    out.append(ax.add_patch(Circle((cx, cy), R, fill=False, ec=BARVY["muzi"], lw=tah["lw"], zorder=12)))
+    x0, y0 = cx + R * d, cy - R * d
+    x1, y1 = cx + (R + L) * d, cy - (R + L) * d
+    out += ax.plot([x0, x1], [y0, y1], color=BARVY["muzi"], **tah)
+    out += ax.plot([x1 - H, x1, x1], [y1, y1, y1 + H], color=BARVY["muzi"], **tah)
+    # ♀ ženy
+    cx, cy, L, C = 735, 875, 165, 72
+    out.append(ax.add_patch(Circle((cx, cy), R, fill=False, ec=BARVY["zeny"], lw=tah["lw"], zorder=12)))
+    out += ax.plot([cx, cx], [cy + R, cy + R + L], color=BARVY["zeny"], **tah)
+    out += ax.plot([cx - C, cx + C], [cy + R + L * 0.5, cy + R + L * 0.5], color=BARVY["zeny"], **tah)
+    return out
 
 
 def vlajka_cr(ax):
@@ -372,7 +515,13 @@ def main():
     ap.add_argument("--nahled", action="store_true")
     ap.add_argument("--snimek", type=float, help="vyrenderuje jen jeden snímek v daném čase (s) do PNG")
     ap.add_argument("--obalka", action="store_true", help="uloží obrázek náhledu (první snímek) a ukázky ořezů")
+    ap.add_argument("--varianta", choices=["zakladni", "pohlavi"], default="zakladni",
+                    help="pohlavi = navíc vodorovný sloupec poměru mužů a žen")
     args = ap.parse_args()
+    pohlavi = args.varianta == "pohlavi"
+    if pohlavi:
+        globals().update(ROZVRZENI_POHLAVI)
+    pripona = "_pohlavi" if pohlavi else ""
 
     tx = json.loads((ROOT / "texty" / f"{args.jazyk}.json").read_text())
     p = tx["popisky"]
@@ -380,7 +529,8 @@ def main():
     plt.rcParams.update({"font.family": FONT, "animation.ffmpeg_path": imageio_ffmpeg.get_ffmpeg_exe()})
     pt = 72 / 100  # px -> pt při dpi 100 (škáluje se s figurou)
 
-    osa = Osa(fps)
+    osa = Osa(fps, od_roku=1869 if pohlavi else None, plynule=pohlavi,
+              presunout=PRESUNOUT_POHLAVI if pohlavi else None)  # varianta: jen roky s údaji o pohlaví
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100 * skala, facecolor=BARVY["pozadi"])
 
     # vrstva textů v pixelových souřadnicích (y od shora)
@@ -389,7 +539,7 @@ def main():
     T = lambda x, y, s="", **kw: tax.text(x, y, s, **kw)
     titulek = T(W / 2, 195, tx["titulek"], ha="center", va="center", fontsize=26 * pt, color=BARVY["text2"],
                 weight="demibold", zorder=8)
-    nadpis_t = T(40, MAPA_Y + 18, p["nadpis_mapy"], va="top", fontsize=28 * pt, color=BARVY["text2"],
+    nadpis_t = T(40, MAPA_Y + 18, p["nadpis_mapy_pohlavi" if pohlavi else "nadpis_mapy"], va="top", fontsize=28 * pt, color=BARVY["text2"],
                  weight="demibold")
     utvar_t = T(178, UTVAR_Y, "", va="center", fontsize=54 * pt, color=BARVY["utvar"], weight="bold")
     rok_t = T(56, ROK_Y, "", va="top", fontsize=118 * pt, color=BARVY["text"], weight="bold")
@@ -398,20 +548,67 @@ def main():
     # událost: ikona v kruhovém odznaku (Font Awesome Free, CC BY 4.0) + popisek
     ikony = json.loads((ROOT / "assets" / "ikony" / "ikony.json").read_text())
     fa = FontProperties(fname=ROOT / "assets" / "ikony" / "fa-solid-900.ttf")
-    ox = 60 + ODZNAK_R
-    zare_odznaku = [tax.add_patch(Circle((ox, UDALOST_Y), ODZNAK_R + d, fc=BARVY["utvar"], ec="none", zorder=3))
-                    for d in (26, 13)]
-    odznak = tax.add_patch(Circle((ox, UDALOST_Y), ODZNAK_R, fc=BARVY["utvar"], ec="none", zorder=4))
-    ikona_t = T(ox, UDALOST_Y + 4, "", ha="center", va="center", fontproperties=fa, fontsize=94 * pt,
+    ox, oy = 60 + ODZNAK_R, UDALOST_Y          # střed odznaku
+    popis_x, popis_y = ox + ODZNAK_R + 40, UDALOST_Y
+    popis_sirka = None                          # None = zalamovat podle počtu znaků (POPIS_ZALOM)
+    if UDALOST_VEDLE_ROKU:  # popisek na řádku letopočtu přes celou zbylou šířku, odznak v mapě nad vlajkou
+        rr = fig.canvas.get_renderer()
+        sirka_roku = 0
+        for y in range(int(osa.roky[0]), int(osa.roky[-1]) + 1):
+            rok_t.set_text(str(y))
+            sirka_roku = max(sirka_roku, rok_t.get_window_extent(rr).width / skala)
+        b = rok_t.get_window_extent(rr).transformed(tax.transData.inverted())
+        popis_x, popis_y = 56 + sirka_roku + 32, (b.y0 + b.y1) / 2
+        popis_sirka = W - 60 - popis_x
+        ox, oy = 60 + ODZNAK_R, UTVAR_Y - 34 - 26 - ODZNAK_R  # nad vlajkou, ve spodní části mapy
+    zare_k = ODZNAK_R / 98  # záře odznaku úměrně jeho velikosti
+    zare_odznaku = [tax.add_patch(Circle((ox, oy), ODZNAK_R + d * zare_k, fc=BARVY["utvar"], ec="none",
+                                         zorder=3)) for d in (26, 13)]
+    odznak = tax.add_patch(Circle((ox, oy), ODZNAK_R, fc=BARVY["utvar"], ec="none", zorder=4))
+    ikona_px = 94 * ODZNAK_R / 98
+    ikona_t = T(ox, oy + 4, "", ha="center", va="center", fontproperties=fa, fontsize=ikona_px * pt,
                 color=BARVY["pozadi"], zorder=5)
-    popis_t = T(ox + ODZNAK_R + 40, UDALOST_Y, "", va="center", fontsize=50 * pt, color=BARVY["text"],
-                weight="demibold",
-                linespacing=1.25)
+    popis_t = T(popis_x, popis_y, "", va="center", fontsize=POPIS_PX * pt, color=BARVY["text"],
+                weight="demibold", linespacing=1.2)
+    zalomene = {}
+
+    def zalom_px(text, artist, sirka):
+        """Zalomí text po slovech tak, aby se v daném písmu vešel do šířky `sirka` (px)."""
+        klic = (text, id(artist), sirka)
+        if klic not in zalomene:
+            rr, radky, akt = fig.canvas.get_renderer(), [], ""
+            for slovo in text.split():
+                zkus = f"{akt} {slovo}".strip()
+                artist.set_text(zkus)
+                if akt and artist.get_window_extent(rr).width / skala > sirka:
+                    radky.append(akt); akt = slovo
+                else:
+                    akt = zkus
+            zalomene[klic] = "\n".join(radky + [akt])
+        return zalomene[klic]
+
+    def zalom(text):
+        """Zalomí popisek: podle šířky v px (využije celé místo vedle letopočtu), jinak podle počtu znaků."""
+        if popis_sirka is None:
+            return "\n".join(textwrap.wrap(text, POPIS_ZALOM))
+        return zalom_px(text, popis_t, popis_sirka)
+
+    # varianta: na konci místo mapy poznámka o „efektu vracejících se vojáků“
+    if pohlavi:
+        stred_mapy = MAPA_Y + MAPA_V / 2
+        kryt_mapy = tax.add_patch(Rectangle((0, MAPA_Y - 5), W, MAPA_V + 10, fc=BARVY["pozadi"], ec="none", zorder=6))
+        poz1 = T(60, stred_mapy - 14, "", va="bottom", fontsize=54 * pt, color=BARVY["text"], weight="bold",
+                 linespacing=1.2, zorder=7)
+        poz2 = T(60, stred_mapy + 22, "", va="top", fontsize=42 * pt, color=BARVY["text2"], weight="demibold",
+                 linespacing=1.25, zorder=7)
+        poz1.set_text(zalom_px(tx["poznamka_vojaci"][0], poz1, W - 120))
+        poz2.set_text(zalom_px(tx["poznamka_vojaci"][1], poz2, W - 120))
 
     # závěr: pointa s rokem 1930 (zůstane do konce) a zdroje
     d = {int(r.rok): float(r.celkem) for r in osa.radky if r.typ == "scitani"}
-    pointa_t = [T(60, UDALOST_Y - 70 + 66 * i, s, va="top", fontsize=50 * pt, weight="bold",
-                  color=BARVY["text"]) for i, s in enumerate(tx["pointa"])]
+    pointa_y = POINTA_Y or UDALOST_Y - 70
+    pointa_t = [T(60, pointa_y + 66 * i, s, va="top", fontsize=50 * pt, weight="bold",
+                  color=BARVY["text"]) for i, s in enumerate(tx["pointa_pohlavi" if pohlavi else "pointa"])]
     zdroje_t = T(W / 2, ZDROJE_Y, "\n".join(textwrap.wrap(tx["zdroje"], 60)), ha="center", va="top",
                  fontsize=22 * pt, color=BARVY["text2"], linespacing=1.4)
     autor_t = T(W / 2, ZDROJE_Y + 110, tx["autor"], ha="center", va="top", fontsize=28 * pt, color=BARVY["text"],
@@ -451,10 +648,15 @@ def main():
                 weight="bold", zorder=12) for (x, y, w, _), r in ((SLOT_STARA, rok_od), (SLOT_NOVA, rok_do))]
     h_sipka = tax.add_patch(Polygon(tvar_sipky(0, 1) * 70 + (540, SLOT_STARA[1] + SLOT_STARA[3] / 2), closed=True,
                                     fc=BARVY["utvar"], ec="none", zorder=12))
-    h_otazka = T(W / 2, 1345, tx["hook"], ha="center", va="center", fontsize=58 * pt, color=BARVY["utvar"],
+    h_otazka = T(W / 2, 1345, tx["hook_pohlavi" if pohlavi else "hook"], ha="center", va="center",
+                 fontsize=58 * pt, color=BARVY["utvar"], linespacing=1.2,
                  weight="bold", zorder=12)
     h_titulek = T(W / 2, 560, tx["titulek"], ha="center", va="center", fontsize=34 * pt, color=BARVY["text2"],
                   weight="demibold", zorder=12)
+
+    h_symboly = symboly_pohlavi(tax, pt) if pohlavi else []
+    h_obdobi = T(W / 2, 625, f"{int(osa.roky[0])} – {int(osa.roky[-1])}", ha="center", va="center",
+                 fontsize=34 * pt, color=BARVY["text"], weight="bold", zorder=12) if pohlavi else None
 
     # mapa
     mapa_ud = stav_v_case(MAPY, osa, 0)
@@ -464,6 +666,23 @@ def main():
     def fmt(v, des):
         s = f"{v / 1e6:.{des}f}".replace(".", p["desetinna_carka"])
         return f'{s} {p["mil"]}'
+
+    def fmt_kratce(v):
+        """Počet v milionech s krátkou jednotkou (do užší části sloupce), např. „4,92 mil.“ / „4.92M“."""
+        s = f"{v / 1e6:.2f}".replace(".", p["desetinna_carka"])
+        jednotka = p.get("mil_kratce", p["mil"])
+        return f"{s}{jednotka}" if len(jednotka) == 1 else f"{s} {jednotka}"
+
+    def procenta(v):
+        return p["procenta"].format(v=f"{v:.1f}".replace(".", p["desetinna_carka"]))
+
+    if pohlavi:
+        sl_pomer = Pretahovani(T, tax, POHLAVI_Y, POHLAVI_V, p["nadpis_pomer"], p, p["pohlavi_nezname"], pt,
+                               fig=fig, skala=skala)
+        # šipky trendu pro počet mužů a počet žen (celkový počet × podíl ze sčítání)
+        muzu = lambda r: osa.pocet(r) * osa.podil_muzu(r) / 100
+        zen = lambda r: osa.pocet(r) * (100 - osa.podil_muzu(r)) / 100
+        sipka_m, sipka_z = Sipka(osa, muzu), Sipka(osa, zen)
 
     # šipka trendu hned za počtem obyvatel: pozice podle nejširšího čísla ve videu, aby neposkakovala
     renderer = fig.canvas.get_renderer()
@@ -480,15 +699,23 @@ def main():
     cx, cy = 60 + sirka + 45 + 0.75 / 1.1 * SIPKA_S / 2, CISLO_Y + 52
     sax = fig.add_axes(obdelnik(cx - SIPKA_S / 2, cy - SIPKA_S / 2, SIPKA_S, SIPKA_S), zorder=9)
     sax.set_xlim(-1.1, 1.1); sax.set_ylim(-1.1, 1.1); sax.set_aspect("equal"); sax.axis("off")
-    sipka = Sipka(osa)
+    sipka = None if pohlavi else Sipka(osa)
+    cislo_t.set_visible(not pohlavi); sax.set_visible(not pohlavi)
     sipka_p = Polygon(tvar_sipky(0, 1), closed=True, ec="none")
     sax.add_patch(sipka_p)
 
     utvar_ud = stav_v_case(UTVARY, osa, 0)
     vlajka_ud = stav_v_case(VLAJKY, osa, 0)
+    if pohlavi:
+        t_pohlavi = osa.cas_roku(osa.s_rok[0])
 
-    pointa_t[-1].set_text(p["pointa_cisla"].format(a=fmt(d[1930], 2), b=fmt(d[2021], 2)))
-    pointa_t[-1].set_color(BARVY["utvar"]); pointa_t[-1].set_fontsize(38 * pt); pointa_t[-1].set_y(UDALOST_Y + 75)
+    if pohlavi:  # pointa o přebytku žen: největší rozdíl vs. poslední sčítání (v tisících)
+        navic = {int(r.rok): (float(r.zeny) - float(r.muzi)) / 1000 for r in osa.radky if r.typ == "scitani"}
+        r1, r2 = max(navic, key=navic.get), max(navic)
+        pointa_t[-1].set_text(p["pointa_pohlavi_cisla"].format(r1=r1, a=round(navic[r1]), r2=r2, b=round(navic[r2])))
+    else:
+        pointa_t[-1].set_text(p["pointa_cisla"].format(a=fmt(d[1930], 2), b=fmt(d[2021], 2)))
+    pointa_t[-1].set_color(BARVY["utvar"]); pointa_t[-1].set_fontsize(38 * pt); pointa_t[-1].set_y(pointa_y + 145)
 
     def snimek(k):
         cas = k / fps
@@ -498,10 +725,13 @@ def main():
 
         # úvodní obrazovka: drží a pak se rozplyne do mapy
         a_h = 1 - ease((cas - H_ODCHOD[0]) / (H_ODCHOD[1] - H_ODCHOD[0]))
-        hax.set_visible(a_h > 0.005); nax.set_visible(a_h > 0.005)
+        vlajky_v_uvodu = not pohlavi  # varianta má místo vlajek symboly mužů a žen
+        hax.set_visible(vlajky_v_uvodu and a_h > 0.005); nax.set_visible(vlajky_v_uvodu and a_h > 0.005)
         for o in (*h_stara, *n_vlajka):
             o.set_alpha(a_h * (0.6 if o in (h_stara[-1], n_vlajka[-1]) else 1))
-        for o in (*h_roky, h_sipka, h_otazka, h_titulek):
+        for o in (*h_roky, h_sipka):
+            o.set_alpha(a_h if vlajky_v_uvodu else 0)
+        for o in (h_otazka, h_titulek, *h_symboly, *([h_obdobi] if h_obdobi else [])):
             o.set_alpha(a_h)
         titulek.set_alpha(intro)
         clona.set_alpha(1 - intro)
@@ -522,19 +752,26 @@ def main():
 
         # událost
         i = osa.radek(cas)
-        if i is not None and cas < konec:
+        if i is not None and POPIS_TRVALY:  # popisek drží až do další události, i přes sčítání bez vlastní
+            i = max(j for j in range(i + 1) if not osa.radky[j].bez_popisu)
+        if i is not None and cas < konec + (0.4 if POPIS_TRVALY else 0):
             r = osa.radky[i]
-            zac, dl = osa.start[i], trvani(r.rok, r.typ)
-            a = ease((cas - zac) / 0.25) * (1 - ease((cas - zac - dl + 0.25) / 0.25))
-            popis_t.set_text("\n".join(textwrap.wrap(tx["udalosti"][str(r.rok)], 25)))
+            zac, dl = osa.start[i], trvani_radku(r)
+            if POPIS_TRVALY:  # po ~2 s se ztlumí: zůstane čitelný, ale je jasné, že jde o proběhlou událost
+                a = ease((cas - zac) / 0.3) * (1 - 0.72 * ease((cas - zac - 2.2) / 0.6)) * (1 - ease((cas - konec) / 0.4))
+            else:
+                a = 0 if r.bez_popisu else ease((cas - zac) / 0.25) * (1 - ease((cas - zac - dl + 0.25) / 0.25))
+            prepis = tx.get("udalosti_pohlavi", {}) if pohlavi else {}  # varianta má u některých let jiné události
+            popis_t.set_text(zalom(prepis.get(r.klic, tx["udalosti"][r.klic])))
             popis_t.set_alpha(a)
             barva = BARVY["text2"] if r.rok in TICHE else BARVY["utvar"]  # válečné momenty tlumeně
             mm = ease_back((cas - zac) / 0.45)  # odznak „vyskočí“ s mírným přestřelením
-            ikona_t.set_text(chr(int(ikony[r.ikona], 16)))
-            ikona_t.set_fontsize(94 * pt * max(mm, 0.01)); ikona_t.set_alpha(a)
+            ikona_t.set_text(chr(int(ikony[r.ikona_pohlavi if pohlavi and r.ikona_pohlavi else r.ikona], 16)))
+            ikona_t.set_fontsize(ikona_px * pt * max(mm, 0.01)); ikona_t.set_alpha(a)
             odznak.set_radius(ODZNAK_R * mm); odznak.set_facecolor(barva); odznak.set_alpha(a)
             for z, al in zip(zare_odznaku, (0.08, 0.18)):
-                z.set_radius((ODZNAK_R + (26 if al < 0.1 else 13)) * mm); z.set_facecolor(barva); z.set_alpha(a * al)
+                z.set_radius((ODZNAK_R + (26 if al < 0.1 else 13) * zare_k) * mm); z.set_facecolor(barva)
+                z.set_alpha(a * al)
         else:
             popis_t.set_alpha(0); ikona_t.set_alpha(0); odznak.set_alpha(0)
             for z in zare_odznaku:
@@ -543,7 +780,11 @@ def main():
         # závěr: pointa (1930 vs. 2021) postupně po řádcích a zůstane do konce, pak zdroje
         for j, z in enumerate(pointa_t):
             z.set_alpha(ease((cas - konec - 0.3 - 0.5 * j) / 0.5))
-        a_z = ease((cas - konec - 2.0) / 0.8)
+        a_z = ease((cas - konec - ZDROJE_ZPOZDENI) / 0.8)
+        if pohlavi:  # mapa zmizí a místo ní se objeví poznámka (nejdřív hlavní věta, pak doplnění)
+            kryt_mapy.set_alpha(ease((cas - konec - POZNAMKA_OD) / 0.6))
+            poz1.set_alpha(ease((cas - konec - POZNAMKA_OD - 0.4) / 0.6))
+            poz2.set_alpha(ease((cas - konec - POZNAMKA_OD - 1.6) / 0.6))
         zdroje_t.set_alpha(a_z); autor_t.set_alpha(a_z)
 
         # mapa
@@ -555,23 +796,30 @@ def main():
         odhad = rok < 1857
         cislo_t.set_text(("≈ " + fmt(v, 1)) if odhad else fmt(v, 2))
         cislo_t.set_color(BARVY["text2"] if odhad else BARVY["text"])
-        uhel, mer = sipka.stav(cas)
-        sipka_p.set_xy(tvar_sipky(uhel, mer))
-        sipka_p.set_facecolor(barva_sipky(uhel))
-        sipka_p.set_alpha(intro)
+        if sipka:
+            uhel, mer = sipka.stav(cas)
+            sipka_p.set_xy(tvar_sipky(uhel, mer))
+            sipka_p.set_facecolor(barva_sipky(uhel))
+            sipka_p.set_alpha(intro)
+
+        # muži vs. ženy: hranice mezi barvami podle podílu, v barvách skutečné počty a šipky jejich trendu
+        if pohlavi:
+            m = osa.podil_muzu(rok)
+            sl_pomer.nastav(m, fmt_kratce(muzu(rok)), fmt_kratce(zen(rok)), ease((cas - t_pohlavi) / 0.6),
+                            sipky=(sipka_m.stav(cas), sipka_z.stav(cas)))
 
     if args.obalka:
-        uloz_obalku(fig, snimek, args.jazyk)
+        uloz_obalku(fig, snimek, args.jazyk + pripona)
         return
     if args.snimek is not None:
         snimek(int(args.snimek * fps))
-        out = ROOT / "assets" / "video" / f"snimek_{args.jazyk}_{args.snimek:.1f}s.png"
+        out = ROOT / "assets" / "video" / f"snimek_{args.jazyk}{pripona}_{args.snimek:.1f}s.png"
         out.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out, facecolor=BARVY["pozadi"])
         print(out)
         return
 
-    out = ROOT / "assets" / "video" / f"cesko_v_cislech_{args.jazyk}{'_nahled' if args.nahled else ''}.mp4"
+    out = ROOT / "assets" / "video" / f"cesko_v_cislech_{args.jazyk}{pripona}{'_nahled' if args.nahled else ''}.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     writer = FFMpegWriter(fps=fps, codec="libx264", extra_args=["-pix_fmt", "yuv420p", "-crf", "20"])
     with writer.saving(fig, str(out), dpi=100 * skala):
